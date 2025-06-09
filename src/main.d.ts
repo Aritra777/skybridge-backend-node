@@ -3,3 +3,9 @@ interface AWSCredentials {
     secretAccessKey: string;
     region: string;
 }
+
+interface EncryptionObj {
+    encryptedData: string;
+    iv: string;
+    tag: string;
+}
