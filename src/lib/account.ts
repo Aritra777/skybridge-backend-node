@@ -20,7 +20,7 @@ export class AccountService {
 
     private getCacheFilePath(): string {
         // Save in a 'region_cache' folder in the project root
-        return path.join(__dirname, "../../region_cache", `${this.accessKeyId}.json`);
+        return path.join(__dirname, "../../cache/region_cache", `${this.accessKeyId}.json`);
     }
 
     async FetchRegions(): Promise<string[]> {

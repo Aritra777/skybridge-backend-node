@@ -13,9 +13,9 @@ export const getListOfS3buckets = async (req: Request, res: Response) => {
             region
         });
 
-        const buckets = await s3Service.listBuckets();
+        const bucketsRes = await s3Service.listBuckets();
 
-        res.send(buckets.flatMap(bucket => bucket));
+        res.status(200).json(bucketsRes);
     } catch (error: any) {
         console.error('Error in /api/s3/buckets:', error);
         handleAWSError(error, res);
