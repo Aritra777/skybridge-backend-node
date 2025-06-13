@@ -21,6 +21,28 @@ export const getListOfS3buckets = async (req: Request, res: Response) => {
         handleAWSError(error, res);
     }
 }
+export const getListOfS3Objects = async (req: Request, res: Response) => {
+    try {
+        const { accessKeyId, secretAccessKey, region, bucketName, bucketRegion } = req.body;
+
+        if (!bucketName || !bucketRegion) {
+            throw new Error("Please provide required Bucket detials.");
+        }
+
+        const s3Service = new S3Service({
+            accessKeyId,
+            secretAccessKey,
+            region
+        });
+
+        const bucketsRes = await s3Service.listObjects(bucketName, bucketRegion);
+
+        res.status(200).json(bucketsRes);
+    } catch (error: any) {
+        console.error('Error in /api/s3/objects:', error);
+        handleAWSError(error, res);
+    }
+}
 
 export const getListOfEC2Instances = async (req: Request, res: Response) => {
     console.log('getListOfEC2Instances called');
@@ -38,6 +60,24 @@ export const getListOfEC2Instances = async (req: Request, res: Response) => {
         res.send(instances);
     } catch (error: any) {
         console.error('Error in /api/ec2/instances:', error);
+        handleAWSError(error, res);
+    }
+}
+export const getListOfEC2Volumes = async (req: Request, res: Response) => {
+    try {
+        const { accessKeyId, secretAccessKey, region } = req.body;
+
+        const EC2Service = (await import('../lib/ec2')).default;
+        const ec2Service = new EC2Service({
+            accessKeyId,
+            secretAccessKey,
+            region
+        });
+
+        const instances = await ec2Service.listVolumes();
+        res.send(instances);
+    } catch (error: any) {
+        console.error('Error in /api/ec2/volumes:', error);
         handleAWSError(error, res);
     }
 }

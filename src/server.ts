@@ -5,7 +5,7 @@ import { S3Client, ListBucketsCommand, ListObjectsV2Command, Bucket } from "@aws
 import { rateLimit } from 'express-rate-limit';
 import S3Service from './lib/s3';
 import { validateCostRecommendationInput, validateCredentials } from './middleware/validatecreds';
-import { getAllCost, getListOfDynamoTables, getListOfEC2Instances, getListOfECSClusters, getListOfECSServices, getListOfS3buckets } from './controller/listresources';
+import { getAllCost, getListOfDynamoTables, getListOfEC2Instances, getListOfEC2Volumes, getListOfECSClusters, getListOfECSServices, getListOfS3buckets, getListOfS3Objects } from './controller/listresources';
 import { getCostRecomendation } from './controller/cost_recomendation';
 
 dotenv.config();
@@ -37,8 +37,10 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 // Routes
 app.post('/api/s3/buckets', validateCredentials, getListOfS3buckets);
+app.post('/api/s3/objects', validateCredentials, getListOfS3Objects);
 
 app.post('/api/ec2/instances', validateCredentials, getListOfEC2Instances);
+app.post('/api/ec2/volumes', validateCredentials, getListOfEC2Volumes);
 app.post('/api/dynamo/tables', validateCredentials, getListOfDynamoTables);
 app.post('/api/ecs/clusters', validateCredentials, getListOfECSClusters);
 app.post('/api/ecs/services', validateCredentials, getListOfECSServices);

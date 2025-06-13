@@ -16,6 +16,7 @@
     "@aws-sdk/client-account": "^3.821.0",
     "@aws-sdk/client-cost-explorer": "^3.821.0",
     "@aws-sdk/client-dynamodb": "^3.821.0",
+    "@aws-sdk/client-ebs": "^3.828.0",
     "@aws-sdk/client-ec2": "^3.826.0",
     "@aws-sdk/client-ecs": "^3.821.0",
     "@aws-sdk/client-s3": "^3.826.0",
