@@ -5,7 +5,7 @@ import { S3Client, ListBucketsCommand, ListObjectsV2Command, Bucket } from "@aws
 import { rateLimit } from 'express-rate-limit';
 import S3Service from './lib/s3';
 import { validateCostRecommendationInput, validateCredentials } from './middleware/validatecreds';
-import { getAllCost, getListOfDynamoTables, getListOfEC2Instances, getListOfEC2Volumes, getListOfECSClusters, getListOfECSServices, getListOfS3buckets, getListOfS3Objects, getCompute, getECSTaskCount, } from './controller/listresources';
+import { getAllCost, getListOfDynamoTables, getListOfEC2Instances, getListOfEC2Volumes, getListOfECSClusters, getListOfECSServices, getListOfS3buckets, getListOfS3Objects, getCompute, getECSTaskCount, getListOfAllStorage, } from './controller/listresources';
 import { getCostRecomendation } from './controller/cost_recomendation';
 
 dotenv.config();
@@ -49,6 +49,7 @@ app.post('/api/ecs/tasks', validateCredentials, getECSTaskCount);
 app.post('/api/cost', validateCredentials, getAllCost);
 app.post("/api/recommendations", validateCostRecommendationInput, getCostRecomendation);
 app.post('/api/compute', validateCredentials, getCompute);
+app.post('/api/storage', validateCredentials, getListOfAllStorage);
 
 app.get('/api', (req, res) => {
     res.send('Hello, World!');
