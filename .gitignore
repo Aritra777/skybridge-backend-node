@@ -6,7 +6,7 @@ dist/
 
 # Environment variables
 .env
-
+/cache
 # Logs
 *.log
 npm-debug.log*
@@ -23,3 +23,5 @@ yarn-error.log*
 # Miscellaneous
 .DS_Store
 Thumbs.db
+
+cache/

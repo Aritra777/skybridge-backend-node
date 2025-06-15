@@ -1,4 +1,4 @@
-import { ECSClient, ListClustersCommand, ListServicesCommand, DescribeServicesCommand, Cluster, Service } from "@aws-sdk/client-ecs";
+import { ECSClient, ListClustersCommand, ListServicesCommand, ListTasksCommand, DescribeTasksCommand, Task, DescribeServicesCommand, Cluster, Service } from "@aws-sdk/client-ecs";
 
 class ECSService {
     private ecsClient: ECSClient;
@@ -41,6 +41,23 @@ class ECSService {
             throw error;
         }
     }
+
+    async listTasks(clusterArn: string): Promise<Task[]> {
+    const taskArnsRes = await this.ecsClient.send(new ListTasksCommand({ cluster: clusterArn }));
+    const taskArns = taskArnsRes.taskArns || [];
+
+    if (taskArns.length === 0) return [];
+
+    const described = await this.ecsClient.send(
+      new DescribeTasksCommand({
+        cluster: clusterArn,
+        tasks: taskArns,
+      })
+    );
+    return described.tasks || [];
+  }
 }
+
+
 
 export default ECSService;

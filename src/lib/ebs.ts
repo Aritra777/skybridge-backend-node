@@ -1,13 +1,24 @@
-import { EBSClient, ListSnapshotBlocksCommand } from "@aws-sdk/client-ebs";
-import { AccountService } from "./account";
-import CostexplorerService from "./cost_explorer";
+import {
+  EC2Client,
+  DescribeVolumesCommand,
+} from "@aws-sdk/client-ec2";
 
-class EBSService {
-    private credentials: AWSCredentials;
+export default class EBSService {
+  private client: EC2Client;
 
-    constructor(credentials: AWSCredentials) {
-        this.credentials = credentials;
-    }
+  constructor({ accessKeyId, secretAccessKey, region }: AWSCredentials) {
+    this.client = new EC2Client({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+  }
+
+  async listVolumes() {
+    const command = new DescribeVolumesCommand({});
+    const response = await this.client.send(command);
+    return response.Volumes || [];
+  }
 }
-
-export default EBSService;
