@@ -139,6 +139,37 @@ export const getListOfECSServices = async (req: Request, res: Response) => {
     }
 };
 
+export const getECSTaskCount = async (req: Request, res: Response) => {
+  try {
+    const { accessKeyId, secretAccessKey, region } = req.body;
+    const ECSService = (await import('../lib/ecs')).default;
+    const ecsService = new ECSService({ 
+        accessKeyId, 
+        secretAccessKey, 
+        region 
+    });
+
+    const clusters = await ecsService.listClusters();
+    let totalTasks = 0;
+    const taskDetails: any[] = [];
+
+    for (const cluster of clusters) {
+      const tasks = await ecsService.listTasks(cluster.clusterArn as string)
+      totalTasks += tasks.length;
+      taskDetails.push(...tasks);
+    }
+
+    res.status(200).json({
+      totalTasks,
+      taskDetails
+    });
+  } catch (error) {
+    console.error('Error in /api/ecs/tasks:', error);
+    handleAWSError(error, res);
+  }
+};
+
+
 export const getAllCost = async (req: Request, res: Response) => {
     try {
         const { accessKeyId, secretAccessKey, region } = req.body;
@@ -153,6 +184,50 @@ export const getAllCost = async (req: Request, res: Response) => {
         res.send(tags);
     } catch (error: any) {
         console.error("Error in /api/cost-explorer/tags:", error);
+        handleAWSError(error, res);
+    }
+};
+
+export const getCompute = async (req: Request, res: Response) => {
+    try {
+        const { accessKeyId, secretAccessKey, region } = req.body;
+
+        const EC2Service = (await import('../lib/ec2')).default;
+        const ec2Service = new EC2Service({
+            accessKeyId,
+            secretAccessKey,
+            region
+        });
+
+        const allInstances = await ec2Service.listInstances();
+        const runningInstances = allInstances.filter((i: any) => i.State.Name === "running");
+        const stoppedInstances = allInstances.filter((i: any) => i.State.Name === "stopped");
+        const terminatedInstances = allInstances.filter((i: any) => i.State.Name === "terminated");
+
+        // Public and private
+        const publicInstances = allInstances.filter((i: any) => i.PublicIpAddress);
+        const privateInstances = allInstances.filter((i: any) => !i.PublicIpAddress);
+
+        // Reserved Instances
+        let reservedInstances: any[] = [];
+        const ec2ServiceWithReserved = ec2Service as any;
+        if (typeof ec2ServiceWithReserved.listReservedInstances === "function") {
+            const reservedInstancesData = await ec2ServiceWithReserved.listReservedInstances();
+            reservedInstances = reservedInstancesData || [];
+        }
+
+        res.status(200).json({
+            totalInstances: allInstances.length,
+            runningInstances: runningInstances.length,
+            stoppedInstances: stoppedInstances.length,
+            terminatedInstances: terminatedInstances.length,
+            publicInstances: publicInstances.length,
+            privateInstances: privateInstances.length,
+            reservedInstances: reservedInstances.length,
+            reservedInstancesDetails: reservedInstances
+        });
+    } catch (error: any) {
+        console.error('Error in /api/ec2/compute:', error);
         handleAWSError(error, res);
     }
 };

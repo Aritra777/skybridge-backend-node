@@ -1,4 +1,4 @@
-import { EC2Client, DescribeInstancesCommand, Instance, DescribeInstancesCommandInput, DescribeVolumesCommand } from "@aws-sdk/client-ec2";
+import { EC2Client, DescribeInstancesCommand, DescribeReservedInstancesCommand, Instance, DescribeInstancesCommandInput, DescribeVolumesCommand } from "@aws-sdk/client-ec2";
 import { AccountService } from "./account";
 import CostexplorerService from "./cost_explorer";
 
