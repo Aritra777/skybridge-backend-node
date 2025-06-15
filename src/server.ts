@@ -5,7 +5,7 @@ import { S3Client, ListBucketsCommand, ListObjectsV2Command, Bucket } from "@aws
 import { rateLimit } from 'express-rate-limit';
 import S3Service from './lib/s3';
 import { validateCostRecommendationInput, validateCredentials } from './middleware/validatecreds';
-import { getAllCost, getListOfDynamoTables, getListOfEC2Instances, getListOfEC2Volumes, getListOfECSClusters, getListOfECSServices, getListOfS3buckets, getListOfS3Objects, getCompute, getECSTaskCount, getListOfAllStorage, } from './controller/listresources';
+import { getAllCost, getListOfDynamoTables, getListOfEC2Instances, getListOfEC2Volumes, getListOfECSClusters, getListOfECSServices, getListOfS3buckets, getListOfS3Objects, getCompute, getECSTaskCount, getListOfAllStorage, getListRoute53Rules, getListOfVPCs } from './controller/listresources';
 import { getCostRecomendation } from './controller/cost_recomendation';
 
 dotenv.config();
@@ -41,6 +41,7 @@ app.post('/api/s3/objects', validateCredentials, getListOfS3Objects);
 
 app.post('/api/ec2/instances', validateCredentials, getListOfEC2Instances);
 app.post('/api/ec2/volumes', validateCredentials, getListOfEC2Volumes);
+app.post('/api/ec2/vpcs', validateCredentials, getListOfVPCs);
 app.post('/api/dynamo/tables', validateCredentials, getListOfDynamoTables);
 app.post('/api/ecs/clusters', validateCredentials, getListOfECSClusters);
 app.post('/api/ecs/services', validateCredentials, getListOfECSServices);
@@ -50,6 +51,7 @@ app.post('/api/cost', validateCredentials, getAllCost);
 app.post("/api/recommendations", validateCostRecommendationInput, getCostRecomendation);
 app.post('/api/compute', validateCredentials, getCompute);
 app.post('/api/storage', validateCredentials, getListOfAllStorage);
+app.post('/api/route53/rules', validateCredentials, getListRoute53Rules);
 
 app.get('/api', (req, res) => {
     res.send('Hello, World!');

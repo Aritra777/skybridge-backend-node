@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { handleAWSError } from "../handle_error";
 import S3Service from "../lib/s3";
-import CostexplorerService from "../lib/cost_explorer"; 
+import CostexplorerService from "../lib/cost_explorer";
 
 // ─────────────────────────────────────────────
 // S3: List Buckets
@@ -65,6 +65,20 @@ export const getListOfEC2Volumes = async (req: Request, res: Response) => {
         handleAWSError(error, res);
     }
 };
+// EC2: List VPCs
+export const getListOfVPCs = async (req: Request, res: Response) => {
+    try {
+        const { accessKeyId, secretAccessKey, region } = req.body;
+        const EC2Service = (await import("../lib/ec2")).default;
+        const ec2Service = new EC2Service({ accessKeyId, secretAccessKey, region });
+
+        const volumes = await ec2Service.listVpcs();
+        res.status(200).json(volumes);
+    } catch (error: any) {
+        console.error('Error in /api/ec2/vpcs:', error);
+        handleAWSError(error, res);
+    }
+};
 
 // DynamoDB: List Tables
 export const getListOfDynamoTables = async (req: Request, res: Response) => {
@@ -112,33 +126,33 @@ export const getListOfECSServices = async (req: Request, res: Response) => {
 };
 
 export const getECSTaskCount = async (req: Request, res: Response) => {
-  try {
-    const { accessKeyId, secretAccessKey, region } = req.body;
-    const ECSService = (await import('../lib/ecs')).default;
-    const ecsService = new ECSService({ 
-        accessKeyId, 
-        secretAccessKey, 
-        region 
-    });
+    try {
+        const { accessKeyId, secretAccessKey, region } = req.body;
+        const ECSService = (await import('../lib/ecs')).default;
+        const ecsService = new ECSService({
+            accessKeyId,
+            secretAccessKey,
+            region
+        });
 
-    const clusters = await ecsService.listClusters();
-    let totalTasks = 0;
-    const taskDetails: any[] = [];
+        const clusters = await ecsService.listClusters();
+        let totalTasks = 0;
+        const taskDetails: any[] = [];
 
-    for (const cluster of clusters) {
-      const tasks = await ecsService.listTasks(cluster.clusterArn as string)
-      totalTasks += tasks.length;
-      taskDetails.push(...tasks);
+        for (const cluster of clusters) {
+            const tasks = await ecsService.listTasks(cluster.clusterArn as string)
+            totalTasks += tasks.length;
+            taskDetails.push(...tasks);
+        }
+
+        res.status(200).json({
+            totalTasks,
+            taskDetails
+        });
+    } catch (error) {
+        console.error('Error in /api/ecs/tasks:', error);
+        handleAWSError(error, res);
     }
-
-    res.status(200).json({
-      totalTasks,
-      taskDetails
-    });
-  } catch (error) {
-    console.error('Error in /api/ecs/tasks:', error);
-    handleAWSError(error, res);
-  }
 };
 
 
@@ -309,3 +323,18 @@ function generateTimeSeriesData(type: "size" | "objects", total: number) {
 
     return data;
 }
+
+// list route 53 services
+export const getListRoute53Rules = async (req: Request, res: Response) => {
+    try {
+        const { accessKeyId, secretAccessKey, region } = req.body;
+        const RouteService = (await import("../lib/network")).default;
+        const route53Service = new RouteService({ accessKeyId, secretAccessKey, region });
+
+        const clusters = await route53Service.listResolverRules();
+        res.status(200).json(clusters);
+    } catch (error: any) {
+        console.error('Error in /api/route53/rules', error);
+        handleAWSError(error, res);
+    }
+};

@@ -1,10 +1,4 @@
-import { EC2Client, DescribeInstancesCommand, DescribeReservedInstancesCommand, Instance, DescribeInstancesCommandInput, DescribeVolumesCommand } from "@aws-sdk/client-ec2";
-// import {
-//     EC2Client,
-//     DescribeInstancesCommand,
-//     Instance,
-//     DescribeVolumesCommand,
-// } from "@aws-sdk/client-ec2";
+import { EC2Client, DescribeInstancesCommand, DescribeReservedInstancesCommand, Instance, DescribeInstancesCommandInput, DescribeVolumesCommand, DescribeVpcsCommand } from "@aws-sdk/client-ec2";
 import { AccountService } from "./account";
 import CostexplorerService from "./cost_explorer";
 
@@ -13,6 +7,30 @@ class EC2Service {
 
     constructor(credentials: AWSCredentials) {
         this.credentials = credentials;
+    }
+
+    // Modularized cost mapping
+    private async getResourceCostMap(serviceName: string): Promise<Record<string, number>> {
+        let costMap: Record<string, number> = {};
+        try {
+            const costClient = new CostexplorerService(this.credentials);
+            const costRes = await costClient.getServiceCost(serviceName);
+
+            if (Array.isArray(costRes)) {
+                for (const service of costRes) {
+                    if (Array.isArray(service.resources)) {
+                        for (const resource of service.resources) {
+                            if (resource.id && typeof resource.cost === "number") {
+                                costMap[resource.id] = resource.cost;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching ${serviceName} cost:`, error);
+        }
+        return costMap;
     }
 
     async listInstances(): Promise<Instance[]> {
@@ -46,26 +64,8 @@ class EC2Service {
                 allInstances = allInstances.concat(instances);
             }
 
-            // Fetch EC2 cost data
-            let costMap: Record<string, number> = {};
-            try {
-                const costClient = new CostexplorerService(this.credentials);
-                const ec2CostRes = await costClient.getServiceCost("Amazon Elastic Compute Cloud - Compute");
-
-                if (Array.isArray(ec2CostRes)) {
-                    for (const service of ec2CostRes) {
-                        if (Array.isArray(service.resources)) {
-                            for (const resource of service.resources) {
-                                if (resource.id && typeof resource.cost === "number") {
-                                    costMap[resource.id] = resource.cost;
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching EC2 cost:", error);
-            }
+            // Fetch EC2 cost data using modularized method
+            const costMap = await this.getResourceCostMap("Amazon Elastic Compute Cloud - Compute");
 
             // Attach cost to instances
             return allInstances.map(instance => ({
@@ -109,26 +109,8 @@ class EC2Service {
                 allVolumes = allVolumes.concat(regionVolumes);
             }
 
-            // Fetch EBS cost data
-            let costMap: Record<string, number> = {};
-            try {
-                const costClient = new CostexplorerService(this.credentials);
-                const ebsCostRes = await costClient.getServiceCost("Amazon Elastic Block Store");
-
-                if (Array.isArray(ebsCostRes)) {
-                    for (const service of ebsCostRes) {
-                        if (Array.isArray(service.resources)) {
-                            for (const resource of service.resources) {
-                                if (resource.id && typeof resource.cost === "number") {
-                                    costMap[resource.id] = resource.cost;
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching EBS cost:", error);
-            }
+            // Fetch EBS cost data using modularized method
+            const costMap = await this.getResourceCostMap("Amazon Elastic Block Store");
 
             // Attach cost to volumes
             return allVolumes.map(volume => ({
@@ -137,6 +119,53 @@ class EC2Service {
             }));
         } catch (error) {
             console.error("Error listing volumes:", error);
+            throw error;
+        }
+    }
+
+    // New: List VPCs with cost
+    async listVpcs(): Promise<any[]> {
+        try {
+            const accClient = new AccountService(this.credentials);
+            const regions = await accClient.FetchRegions();
+            let allVpcs: any[] = [];
+            const promises = [];
+
+            for (const region of regions) {
+                const ec2ClientPerRegion = new EC2Client({
+                    credentials: {
+                        accessKeyId: this.credentials.accessKeyId,
+                        secretAccessKey: this.credentials.secretAccessKey,
+                    },
+                    region,
+                });
+
+                promises.push(
+                    ec2ClientPerRegion.send(new DescribeVpcsCommand({}))
+                        .then(res => res.Vpcs || [])
+                        .catch(error => {
+                            console.error(`Error describing VPCs in ${region}:`, error);
+                            return [];
+                        })
+                );
+            }
+
+            const results = await Promise.all(promises);
+            for (const regionVpcs of results) {
+                allVpcs = allVpcs.concat(regionVpcs);
+            }
+
+            // Fetch VPC cost data using modularized method
+            // Note: Replace with the correct AWS service name for VPC cost if available
+            const costMap = await this.getResourceCostMap("Amazon Virtual Private Cloud");
+
+            // Attach cost to VPCs
+            return allVpcs.map(vpc => ({
+                ...vpc,
+                cost: costMap[vpc.VpcId ?? ""] ?? 0,
+            }));
+        } catch (error) {
+            console.error("Error listing VPCs:", error);
             throw error;
         }
     }
